@@ -83,8 +83,10 @@ func loadConfData(ctx *gin.Context) (interface{}, error) {
 		HLSDisable         *bool                `json:"hlsDisable"`
 		HLSAddress         *string              `json:"hlsAddress"`
 		HLSAlwaysRemux     *bool                `json:"hlsAlwaysRemux"`
+		HLSVariant         *conf.HLSVariant     `json:"hlsVariant"`
 		HLSSegmentCount    *int                 `json:"hlsSegmentCount"`
 		HLSSegmentDuration *conf.StringDuration `json:"hlsSegmentDuration"`
+		HLSPartDuration    *conf.StringDuration `json:"hlsPartDuration"`
 		HLSSegmentMaxSize  *conf.StringSize     `json:"hlsSegmentMaxSize"`
 		HLSAllowOrigin     *string              `json:"hlsAllowOrigin"`
 	}

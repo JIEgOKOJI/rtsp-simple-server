@@ -333,8 +333,10 @@ func (p *Core) createResources(initial bool) error {
 				p.conf.HLSAddress,
 				p.conf.ExternalAuthenticationURL,
 				p.conf.HLSAlwaysRemux,
+				p.conf.HLSVariant,
 				p.conf.HLSSegmentCount,
 				p.conf.HLSSegmentDuration,
+				p.conf.HLSPartDuration,
 				p.conf.HLSSegmentMaxSize,
 				p.conf.HLSAllowOrigin,
 				p.conf.ReadBufferCount,
@@ -476,8 +478,10 @@ func (p *Core) closeResources(newConf *conf.Conf, calledByAPI bool) {
 		newConf.HLSAddress != p.conf.HLSAddress ||
 		newConf.ExternalAuthenticationURL != p.conf.ExternalAuthenticationURL ||
 		newConf.HLSAlwaysRemux != p.conf.HLSAlwaysRemux ||
+		newConf.HLSVariant != p.conf.HLSVariant ||
 		newConf.HLSSegmentCount != p.conf.HLSSegmentCount ||
 		newConf.HLSSegmentDuration != p.conf.HLSSegmentDuration ||
+		newConf.HLSPartDuration != p.conf.HLSPartDuration ||
 		newConf.HLSSegmentMaxSize != p.conf.HLSSegmentMaxSize ||
 		newConf.HLSAllowOrigin != p.conf.HLSAllowOrigin ||
 		newConf.ReadBufferCount != p.conf.ReadBufferCount ||

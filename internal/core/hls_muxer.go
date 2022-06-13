@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/aler9/gortsplib"
 	"github.com/aler9/gortsplib/pkg/ringbuffer"
 	"github.com/aler9/gortsplib/pkg/rtpaac"
+	"github.com/gin-gonic/gin"
 
 	"github.com/aler9/rtsp-simple-server/internal/conf"
 	"github.com/aler9/rtsp-simple-server/internal/hls"
@@ -48,25 +48,18 @@ html, body {
 
 <video id="video" muted controls autoplay></video>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.1.5"></script>
 
 <script>
 
 const create = () => {
 	const video = document.getElementById('video');
 
-	if (video.canPlayType('application/vnd.apple.mpegurl')) {
-		// since it's not possible to detect timeout errors in iOS,
-		// wait for the playlist to be available before starting the stream
-		fetch('stream.m3u8')
-			.then(() => {
-				video.src = 'index.m3u8';
-				video.play();
-			});
-
-	} else {
+	// always prefer hls.js over native HLS.
+	// this is because some Android versions support native HLS
+	// but doesn't support fMP4s.
+	if (Hls.isSupported()) {
 		const hls = new Hls({
-			progressive: true,
 		});
 
 		hls.on(Hls.Events.ERROR, (evt, data) => {
@@ -81,6 +74,15 @@ const create = () => {
 		hls.attachMedia(video);
 
 		video.play();
+
+	} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+		// since it's not possible to detect timeout errors in iOS,
+		// wait for the playlist to be available before starting the stream
+		fetch('stream.m3u8')
+			.then(() => {
+				video.src = 'index.m3u8';
+				video.play();
+			});
 	}
 };
 
@@ -92,17 +94,11 @@ window.addEventListener('DOMContentLoaded', create);
 </html>
 `
 
-type hlsMuxerResponse struct {
-	status int
-	header map[string]string
-	body   io.Reader
-}
-
 type hlsMuxerRequest struct {
 	dir  string
 	file string
-	req  *http.Request
-	res  chan hlsMuxerResponse
+	ctx  *gin.Context
+	res  chan func() *hls.MuxerFileResponse
 }
 
 type hlsMuxerPathManager interface {
@@ -118,8 +114,10 @@ type hlsMuxer struct {
 	name                      string
 	externalAuthenticationURL string
 	hlsAlwaysRemux            bool
+	hlsVariant                conf.HLSVariant
 	hlsSegmentCount           int
 	hlsSegmentDuration        conf.StringDuration
+	hlsPartDuration           conf.StringDuration
 	hlsSegmentMaxSize         conf.StringSize
 	readBufferCount           int
 	wg                        *sync.WaitGroup
@@ -143,10 +141,13 @@ type hlsMuxer struct {
 func newHLSMuxer(
 	parentCtx context.Context,
 	name string,
+	remoteAddr string,
 	externalAuthenticationURL string,
 	hlsAlwaysRemux bool,
+	hlsVariant conf.HLSVariant,
 	hlsSegmentCount int,
 	hlsSegmentDuration conf.StringDuration,
+	hlsPartDuration conf.StringDuration,
 	hlsSegmentMaxSize conf.StringSize,
 	readBufferCount int,
 	wg *sync.WaitGroup,
@@ -160,8 +161,10 @@ func newHLSMuxer(
 		name:                      name,
 		externalAuthenticationURL: externalAuthenticationURL,
 		hlsAlwaysRemux:            hlsAlwaysRemux,
+		hlsVariant:                hlsVariant,
 		hlsSegmentCount:           hlsSegmentCount,
 		hlsSegmentDuration:        hlsSegmentDuration,
+		hlsPartDuration:           hlsPartDuration,
 		hlsSegmentMaxSize:         hlsSegmentMaxSize,
 		readBufferCount:           readBufferCount,
 		wg:                        wg,
@@ -178,7 +181,12 @@ func newHLSMuxer(
 		hlsServerAPIMuxersList: make(chan hlsServerAPIMuxersListSubReq),
 	}
 
-	m.log(logger.Info, "created")
+	m.log(logger.Info, "created %s", func() string {
+		if remoteAddr == "" {
+			return "automatically"
+		}
+		return "(requested by " + remoteAddr + ")"
+	}())
 
 	m.wg.Add(1)
 	go m.run()
@@ -249,7 +257,9 @@ func (m *hlsMuxer) run() {
 	m.ctxCancel()
 
 	for _, req := range m.requests {
-		req.res <- hlsMuxerResponse{status: http.StatusNotFound}
+		req.res <- func() *hls.MuxerFileResponse {
+			return &hls.MuxerFileResponse{Status: http.StatusNotFound}
+		}
 	}
 
 	m.parent.onMuxerClose(m)
@@ -268,7 +278,13 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	}
 
 	m.path = res.path
+	streamName := "NoName"
+	if len(strings.Split(m.pathName, "/")) == 2 {
+		streamName = strings.Split(m.pathName, "/")[1]
+		streamName = strings.Split(streamName, "_")[0]
+	}
 
+	fmt.Println("streamName", streamName)
 	defer func() {
 		m.path.onReaderRemove(pathReaderRemoveReq{author: m})
 	}()
@@ -311,15 +327,19 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	}
 
 	var err error
+
 	m.muxer, err = hls.NewMuxer(
+		hls.MuxerVariant(m.hlsVariant),
 		m.hlsSegmentCount,
 		time.Duration(m.hlsSegmentDuration),
+		time.Duration(m.hlsPartDuration),
 		uint64(m.hlsSegmentMaxSize),
 		videoTrack,
 		audioTrack,
+		streamName,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("muxer error: %v", err)
 	}
 	defer m.muxer.Close()
 
@@ -346,9 +366,6 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 						continue
 					}
 
-					// video is decoded in another routine,
-					// while audio is decoded in this routine:
-					// we have to sync their PTS.
 					if videoInitialPTS == nil {
 						v := data.h264PTS
 						videoInitialPTS = &v
@@ -357,8 +374,7 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 
 					err = m.muxer.WriteH264(pts, data.h264NALUs)
 					if err != nil {
-						m.log(logger.Warn, "unable to write segment: %v", err)
-						continue
+						return fmt.Errorf("muxer error: %v", err)
 					}
 				} else if audioTrack != nil && data.trackID == audioTrackID {
 					aus, pts, err := aacDecoder.Decode(data.rtp)
@@ -371,8 +387,7 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 
 					err = m.muxer.WriteAAC(pts, aus)
 					if err != nil {
-						m.log(logger.Warn, "unable to write segment: %v", err)
-						continue
+						return fmt.Errorf("muxer error: %v", err)
 					}
 				}
 			}
@@ -403,70 +418,48 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	}
 }
 
-func (m *hlsMuxer) handleRequest(req hlsMuxerRequest) hlsMuxerResponse {
+func (m *hlsMuxer) handleRequest(req hlsMuxerRequest) func() *hls.MuxerFileResponse {
 	atomic.StoreInt64(m.lastRequestTime, time.Now().Unix())
 
-	err := m.authenticate(req.req)
+	err := m.authenticate(req.ctx.Request)
 	if err != nil {
 		if terr, ok := err.(pathErrAuthCritical); ok {
 			m.log(logger.Info, "authentication error: %s", terr.message)
-			return hlsMuxerResponse{
-				status: http.StatusUnauthorized,
+			return func() *hls.MuxerFileResponse {
+				return &hls.MuxerFileResponse{
+					Status: http.StatusUnauthorized,
+				}
 			}
 		}
 
-		return hlsMuxerResponse{
-			status: http.StatusUnauthorized,
-			header: map[string]string{
-				"WWW-Authenticate": `Basic realm="rtsp-simple-server"`,
-			},
+		return func() *hls.MuxerFileResponse {
+			return &hls.MuxerFileResponse{
+				Status: http.StatusUnauthorized,
+				Header: map[string]string{
+					"WWW-Authenticate": `Basic realm="rtsp-simple-server"`,
+				},
+			}
 		}
 	}
 
-	switch {
-	case req.file == "index.m3u8":
-		return hlsMuxerResponse{
-			status: http.StatusOK,
-			header: map[string]string{
-				"Content-Type": `application/x-mpegURL`,
-			},
-			body: m.muxer.PrimaryPlaylist(),
+	if req.file == "" {
+		return func() *hls.MuxerFileResponse {
+			return &hls.MuxerFileResponse{
+				Status: http.StatusOK,
+				Header: map[string]string{
+					"Content-Type": `text/html`,
+				},
+				Body: bytes.NewReader([]byte(index)),
+			}
 		}
+	}
 
-	case req.file == "stream.m3u8":
-		return hlsMuxerResponse{
-			status: http.StatusOK,
-			header: map[string]string{
-				"Content-Type": `application/x-mpegURL`,
-			},
-			body: m.muxer.StreamPlaylist(),
-		}
-
-	case strings.HasSuffix(req.file, ".ts"):
-		r := m.muxer.Segment(req.file)
-		if r == nil {
-			return hlsMuxerResponse{status: http.StatusNotFound}
-		}
-
-		return hlsMuxerResponse{
-			status: http.StatusOK,
-			header: map[string]string{
-				"Content-Type": `video/MP2T`,
-			},
-			body: r,
-		}
-
-	case req.file == "":
-		return hlsMuxerResponse{
-			status: http.StatusOK,
-			header: map[string]string{
-				"Content-Type": `text/html`,
-			},
-			body: bytes.NewReader([]byte(index)),
-		}
-
-	default:
-		return hlsMuxerResponse{status: http.StatusNotFound}
+	return func() *hls.MuxerFileResponse {
+		return m.muxer.File(
+			req.file,
+			req.ctx.Query("_HLS_msn"),
+			req.ctx.Query("_HLS_part"),
+			req.ctx.Query("_HLS_skip"))
 	}
 }
 
@@ -528,7 +521,9 @@ func (m *hlsMuxer) onRequest(req hlsMuxerRequest) {
 	select {
 	case m.request <- req:
 	case <-m.ctx.Done():
-		req.res <- hlsMuxerResponse{status: http.StatusNotFound}
+		req.res <- func() *hls.MuxerFileResponse {
+			return &hls.MuxerFileResponse{Status: http.StatusInternalServerError}
+		}
 	}
 }
 

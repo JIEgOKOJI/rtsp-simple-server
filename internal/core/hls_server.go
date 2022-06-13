@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	gopath "path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/aler9/rtsp-simple-server/internal/conf"
+	"github.com/aler9/rtsp-simple-server/internal/hls"
 	"github.com/aler9/rtsp-simple-server/internal/logger"
 )
 
@@ -47,8 +50,10 @@ type hlsServerParent interface {
 type hlsServer struct {
 	externalAuthenticationURL string
 	hlsAlwaysRemux            bool
+	hlsVariant                conf.HLSVariant
 	hlsSegmentCount           int
 	hlsSegmentDuration        conf.StringDuration
+	hlsPartDuration           conf.StringDuration
 	hlsSegmentMaxSize         conf.StringSize
 	hlsAllowOrigin            string
 	readBufferCount           int
@@ -74,8 +79,10 @@ func newHLSServer(
 	address string,
 	externalAuthenticationURL string,
 	hlsAlwaysRemux bool,
+	hlsVariant conf.HLSVariant,
 	hlsSegmentCount int,
 	hlsSegmentDuration conf.StringDuration,
+	hlsPartDuration conf.StringDuration,
 	hlsSegmentMaxSize conf.StringSize,
 	hlsAllowOrigin string,
 	readBufferCount int,
@@ -93,8 +100,10 @@ func newHLSServer(
 	s := &hlsServer{
 		externalAuthenticationURL: externalAuthenticationURL,
 		hlsAlwaysRemux:            hlsAlwaysRemux,
+		hlsVariant:                hlsVariant,
 		hlsSegmentCount:           hlsSegmentCount,
 		hlsSegmentDuration:        hlsSegmentDuration,
+		hlsPartDuration:           hlsPartDuration,
 		hlsSegmentMaxSize:         hlsSegmentMaxSize,
 		hlsAllowOrigin:            hlsAllowOrigin,
 		readBufferCount:           readBufferCount,
@@ -135,7 +144,20 @@ func (s *hlsServer) close() {
 	s.ctxCancel()
 	s.wg.Wait()
 }
-
+func (s *hlsServer) getPrem(streamname string) (int, error) {
+	var Client = &http.Client{Timeout: 5 * time.Second}
+	r, err := Client.Get("https://goodgame.ru/api/4/transcoding/" + streamname)
+	if err != nil {
+		return 0, err
+	}
+	defer r.Body.Close()
+	api, _ := ioutil.ReadAll(r.Body)
+	if string(api) == "true" {
+		return 1, nil
+	} else {
+		return 0, nil
+	}
+}
 func (s *hlsServer) run() {
 	defer s.wg.Done()
 
@@ -150,11 +172,20 @@ outer:
 		select {
 		case pa := <-s.pathSourceReady:
 			if s.hlsAlwaysRemux {
-				s.findOrCreateMuxer(pa.Name())
+				s.findOrCreateMuxer(pa.Name(), "")
 			}
 
 		case req := <-s.request:
-			r := s.findOrCreateMuxer(req.dir)
+			srtName := strings.Split(req.dir, "_")
+			if len(srtName) == 1 {
+				status, _ := s.getPrem(strings.Split(srtName[0], "/")[1])
+				if status == 1 {
+					req.dir = req.dir + "_prem"
+				}
+				fmt.Println("iSpremium ", strings.Split(srtName[0], "/")[1], "serving manifest ", req.dir)
+			}
+			r := s.findOrCreateMuxer(req.dir, req.ctx.Request.RemoteAddr)
+
 			r.onRequest(req)
 
 		case c := <-s.muxerClose:
@@ -191,7 +222,7 @@ outer:
 }
 
 func (s *hlsServer) onRequest(ctx *gin.Context) {
-	s.log(logger.Info, "[conn %v] %s %s", ctx.Request.RemoteAddr, ctx.Request.Method, ctx.Request.URL.Path)
+	s.log(logger.Debug, "[conn %v] %s %s", ctx.Request.RemoteAddr, ctx.Request.Method, ctx.Request.URL.Path)
 
 	byts, _ := httputil.DumpRequest(ctx.Request, true)
 	s.log(logger.Debug, "[conn %v] [c->s] %s", ctx.Request.RemoteAddr, string(byts))
@@ -227,7 +258,9 @@ func (s *hlsServer) onRequest(ctx *gin.Context) {
 	}
 
 	dir, fname := func() (string, string) {
-		if strings.HasSuffix(pa, ".ts") || strings.HasSuffix(pa, ".m3u8") {
+		if strings.HasSuffix(pa, ".m3u8") ||
+			strings.HasSuffix(pa, ".ts") ||
+			strings.HasSuffix(pa, ".mp4") {
 			return gopath.Dir(pa), gopath.Base(pa)
 		}
 		return pa, ""
@@ -241,25 +274,28 @@ func (s *hlsServer) onRequest(ctx *gin.Context) {
 
 	dir = strings.TrimSuffix(dir, "/")
 
-	cres := make(chan hlsMuxerResponse)
+	cres := make(chan func() *hls.MuxerFileResponse)
 	hreq := hlsMuxerRequest{
 		dir:  dir,
 		file: fname,
-		req:  ctx.Request,
+		ctx:  ctx,
 		res:  cres,
 	}
 
 	select {
 	case s.request <- hreq:
-		res := <-cres
+		cb := <-cres
 
-		for k, v := range res.header {
+		res := cb()
+
+		for k, v := range res.Header {
 			ctx.Writer.Header().Set(k, v)
 		}
-		ctx.Writer.WriteHeader(res.status)
 
-		if res.body != nil {
-			io.Copy(ctx.Writer, res.body)
+		ctx.Writer.WriteHeader(res.Status)
+
+		if res.Body != nil {
+			io.Copy(ctx.Writer, res.Body)
 		}
 
 	case <-s.ctx.Done():
@@ -268,16 +304,20 @@ func (s *hlsServer) onRequest(ctx *gin.Context) {
 	s.log(logger.Debug, "[conn %v] [s->c] %s", ctx.Request.RemoteAddr, logw.dump())
 }
 
-func (s *hlsServer) findOrCreateMuxer(pathName string) *hlsMuxer {
+func (s *hlsServer) findOrCreateMuxer(pathName string, remoteAddr string) *hlsMuxer {
+
 	r, ok := s.muxers[pathName]
 	if !ok {
 		r = newHLSMuxer(
 			s.ctx,
 			pathName,
+			remoteAddr,
 			s.externalAuthenticationURL,
 			s.hlsAlwaysRemux,
+			s.hlsVariant,
 			s.hlsSegmentCount,
 			s.hlsSegmentDuration,
+			s.hlsPartDuration,
 			s.hlsSegmentMaxSize,
 			s.readBufferCount,
 			&s.wg,

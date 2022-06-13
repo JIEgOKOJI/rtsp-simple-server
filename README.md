@@ -60,6 +60,8 @@ Features:
   * [From a Raspberry Pi Camera](#from-a-raspberry-pi-camera)
   * [From OBS Studio](#from-obs-studio)
   * [From OpenCV](#from-opencv)
+* [Read from the server](#read-from-the-server)
+  * [From VLC and Ubuntu](#from-vlc-and-ubuntu)
 * [RTSP protocol](#rtsp-protocol)
   * [RTSP general usage](#rtsp-general-usage)
   * [TCP transport](#tcp-transport)
@@ -72,6 +74,7 @@ Features:
   * [RTMP general usage](#rtmp-general-usage)
 * [HLS protocol](#hls-protocol)
   * [HLS general usage](#hls-general-usage)
+  * [Embedding](#embedding)
   * [Decrease delay](#decrease-delay)
 * [Links](#links)
 
@@ -541,11 +544,11 @@ If credentials are in use, use the following parameters:
 To publish a video stream from OpenCV to the server, OpenCV must be compiled with GStreamer support, by following this procedure:
 
 ```
-sudo apt install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+sudo apt install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-ugly gstreamer1.0-rtsp python3-dev python3-numpy
 git clone --depth=1 -b 4.5.4 https://github.com/opencv/opencv
 cd opencv
 mkdir build && cd build
-cmake -D WITH_GSTREAMER=ON ..
+cmake -D CMAKE_INSTALL_PREFIX=/usr -D WITH_GSTREAMER=ON ..
 make -j$(nproc)
 sudo make install
 ```
@@ -562,7 +565,7 @@ width = 800
 height = 600
 
 out = cv2.VideoWriter('appsrc ! videoconvert' + \
-    ' ! x264enc speed-preset=ultrafast bitrate=600' + \
+    ' ! x264enc speed-preset=ultrafast bitrate=600 key-int-max=40' + \
     ' ! rtspclientsink location=rtsp://localhost:8554/mystream',
     cv2.CAP_GSTREAMER, 0, fps, (width, height), True)
 if not out.isOpened():
@@ -580,6 +583,25 @@ while True:
     print("frame written to the server")
 
     sleep(1 / fps)
+```
+
+## Read from the server
+
+### From VLC and Ubuntu
+
+The VLC shipped with Ubuntu 21.10 doesn't support playing RTSP due to a license issue (see [here](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=982299) and [here](https://stackoverflow.com/questions/69766748/cvlc-cannot-play-rtsp-omxplayer-instead-can)).
+
+To overcome the issue, remove the default VLC instance and install the snap version:
+
+```
+sudo apt purge -y vlc
+snap install vlc
+```
+
+Then use it to read the stream:
+
+```
+vlc rtsp://localhost:8554/mystream
 ```
 
 ## RTSP protocol
@@ -764,13 +786,21 @@ http://localhost:8888/mystream
 
 where `mystream` is the name of a stream that is being published.
 
-The direct HLS URL, that can be used to read the stream with players (VLC) or Javascript libraries (hls.js) can be obtained by appending `/index.m3u8`:
+### Embedding
+
+The simples way to embed a live stream into a web page consists in using an iframe tag:
 
 ```
-http://localhost:8888/mystream/index.m3u8
+<iframe src="http://rtsp-simple-server-ip:8888/mystream" scrolling="no"></iframe>
 ```
 
-Please note that most browsers don't support HLS directly (except Safari); a Javascript library, like [hls.js](https://github.com/video-dev/hls.js), must be used to load the stream.
+Alternatively you can create a video tag that points directly to the stream playlist:
+
+```
+<video src="http://localhost:8888/mystream/index.m3u8"></video>
+```
+
+Please note that most browsers don't support HLS directly (except Safari); a Javascript library, like [hls.js](https://github.com/video-dev/hls.js), must be used to load the stream. You can find a working example by looking at the [source code of the HLS muxer](internal/core/hls_muxer.go).
 
 ### Decrease delay
 

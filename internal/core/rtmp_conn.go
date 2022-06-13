@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/aler9/gortsplib"
+	"github.com/aler9/gortsplib/pkg/aac"
 	"github.com/aler9/gortsplib/pkg/h264"
 	"github.com/aler9/gortsplib/pkg/ringbuffer"
 	"github.com/aler9/gortsplib/pkg/rtpaac"
@@ -386,7 +387,7 @@ func (c *rtmpConn) runRead(ctx context.Context) error {
 				}
 			}
 
-			avcc, err := h264.EncodeAVCC(data.h264NALUs)
+			avcc, err := h264.AVCCEncode(data.h264NALUs)
 			if err != nil {
 				return err
 			}
@@ -422,18 +423,16 @@ func (c *rtmpConn) runRead(ctx context.Context) error {
 				continue
 			}
 
-			for _, au := range aus {
+			for i, au := range aus {
 				c.conn.SetWriteDeadline(time.Now().Add(time.Duration(c.writeTimeout)))
 				err := c.conn.WritePacket(av.Packet{
 					Type: av.AAC,
 					Data: au,
-					Time: pts,
+					Time: pts + time.Duration(i)*aac.SamplesPerAccessUnit*time.Second/time.Duration(audioTrack.ClockRate()),
 				})
 				if err != nil {
 					return err
 				}
-
-				pts += 1000 * time.Second / time.Duration(audioTrack.ClockRate())
 			}
 		}
 	}
@@ -461,7 +460,7 @@ func (c *rtmpConn) runPublish(ctx context.Context) error {
 	var aacEncoder *rtpaac.Encoder
 	if audioTrack != nil {
 		aacEncoder = &rtpaac.Encoder{
-			PayloadType:      97,
+			PayloadType:      96,
 			SampleRate:       audioTrack.ClockRate(),
 			SizeLength:       13,
 			IndexLength:      3,
@@ -565,7 +564,7 @@ func (c *rtmpConn) runPublish(ctx context.Context) error {
 				return fmt.Errorf("received an H264 packet, but track is not set up")
 			}
 
-			nalus, err := h264.DecodeAVCC(pkt.Data)
+			nalus, err := h264.AVCCDecode(pkt.Data)
 			if err != nil {
 				return err
 			}

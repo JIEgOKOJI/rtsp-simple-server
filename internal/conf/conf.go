@@ -207,8 +207,10 @@ type Conf struct {
 	HLSDisable         bool           `json:"hlsDisable"`
 	HLSAddress         string         `json:"hlsAddress"`
 	HLSAlwaysRemux     bool           `json:"hlsAlwaysRemux"`
+	HLSVariant         HLSVariant     `json:"hlsVariant"`
 	HLSSegmentCount    int            `json:"hlsSegmentCount"`
 	HLSSegmentDuration StringDuration `json:"hlsSegmentDuration"`
+	HLSPartDuration    StringDuration `json:"hlsPartDuration"`
 	HLSSegmentMaxSize  StringSize     `json:"hlsSegmentMaxSize"`
 	HLSAllowOrigin     string         `json:"hlsAllowOrigin"`
 
@@ -350,11 +352,27 @@ func (conf *Conf) CheckAndFillMissing() error {
 	}
 
 	if conf.HLSSegmentCount == 0 {
-		conf.HLSSegmentCount = 3
+		conf.HLSSegmentCount = 7
+	}
+
+	switch conf.HLSVariant {
+	case HLSVariantLowLatency:
+		if conf.HLSSegmentCount < 7 {
+			return fmt.Errorf("Low-Latency HLS requires at least 7 segments")
+		}
+
+	default:
+		if conf.HLSSegmentCount < 3 {
+			return fmt.Errorf("The minimum number of HLS segments is 3")
+		}
 	}
 
 	if conf.HLSSegmentDuration == 0 {
 		conf.HLSSegmentDuration = 1 * StringDuration(time.Second)
+	}
+
+	if conf.HLSPartDuration == 0 {
+		conf.HLSPartDuration = 100 * StringDuration(time.Millisecond)
 	}
 
 	if conf.HLSSegmentMaxSize == 0 {
