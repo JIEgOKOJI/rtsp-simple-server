@@ -168,35 +168,49 @@ func (s *hlsServer) close() {
 	s.ctxCancel()
 	s.wg.Wait()
 }
-
+func (s *hlsServer) getPrem(streamname string) (int, error) {
+	var Client = &http.Client{Timeout: 5 * time.Second}
+	r, err := Client.Get("https://goodgame.ru/api/4/transcoding/" + streamname)
+	if err != nil {
+		return 0, err
+	}
+	defer r.Body.Close()
+	api, _ := ioutil.ReadAll(r.Body)
+	if string(api) == "true" {
+		return 1, nil
+	} else {
+		return 0, nil
+	}
+}
 func (s *hlsServer) run() {
 	defer s.wg.Done()
 
 	router := gin.New()
 	router.NoRoute(s.onRequest)
 
-	hs := &http.Server{
-		Handler:   router,
-		TLSConfig: s.tlsConfig,
-		ErrorLog:  log.New(&nilWriter{}, "", 0),
-	}
-
-	if s.tlsConfig != nil {
-		go hs.ServeTLS(s.ln, "", "")
-	} else {
-		go hs.Serve(s.ln)
-	}
+	hs := &http.Server{Handler: router}
+	go hs.Serve(s.ln)
 
 outer:
 	for {
 		select {
 		case pa := <-s.pathSourceReady:
 			if s.hlsAlwaysRemux {
-				s.findOrCreateMuxer(pa.Name(), "", nil)
+				s.findOrCreateMuxer(pa.Name(), "")
 			}
 
 		case req := <-s.request:
-			s.findOrCreateMuxer(req.dir, req.ctx.Request.RemoteAddr, req)
+			srtName := strings.Split(req.dir, "_")
+			if len(srtName) == 1 {
+				status, _ := s.getPrem(strings.Split(srtName[0], "/")[1])
+				if status == 1 {
+					req.dir = req.dir + "_prem"
+				}
+				fmt.Println("iSpremium ", strings.Split(srtName[0], "/")[1], "serving manifest ", req.dir)
+			}
+			r := s.findOrCreateMuxer(req.dir, req.ctx.Request.RemoteAddr)
+
+			r.onRequest(req)
 
 		case c := <-s.muxerClose:
 			if c2, ok := s.muxers[c.PathName()]; !ok || c2 != c {
