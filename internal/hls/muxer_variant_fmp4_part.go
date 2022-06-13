@@ -7,11 +7,17 @@ import (
 	"strconv"
 	"time"
 
+<<<<<<< HEAD
 	gomp4 "github.com/abema/go-mp4"
 	"github.com/aler9/gortsplib"
 	"github.com/aler9/gortsplib/pkg/aac"
 
 	"github.com/aler9/rtsp-simple-server/internal/mp4"
+=======
+	"github.com/abema/go-mp4"
+	"github.com/aler9/gortsplib"
+	"github.com/aler9/gortsplib/pkg/aac"
+>>>>>>> dahua
 )
 
 func durationGoToMp4(v time.Duration, timescale time.Duration) int64 {
@@ -19,10 +25,18 @@ func durationGoToMp4(v time.Duration, timescale time.Duration) int64 {
 }
 
 func mp4PartGenerateVideoTraf(
+<<<<<<< HEAD
 	w *mp4.Writer,
 	trackID int,
 	videoSamples []*fmp4VideoSample,
 ) (*gomp4.Trun, int, error) {
+=======
+	w *mp4Writer,
+	trackID int,
+	videoSamples []*fmp4VideoSample,
+	startDTS time.Duration,
+) (*mp4.Trun, int, error) {
+>>>>>>> dahua
 	/*
 		traf
 		- tfhd
@@ -30,15 +44,24 @@ func mp4PartGenerateVideoTraf(
 		- trun
 	*/
 
+<<<<<<< HEAD
 	_, err := w.WriteBoxStart(&gomp4.Traf{}) // <traf>
+=======
+	_, err := w.writeBoxStart(&mp4.Traf{}) // <traf>
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
 
 	flags := 0
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Tfhd{ // <tfhd/>
 		FullBox: gomp4.FullBox{
+=======
+	_, err = w.writeBox(&mp4.Tfhd{ // <tfhd/>
+		FullBox: mp4.FullBox{
+>>>>>>> dahua
 			Flags: [3]byte{2, byte(flags >> 8), byte(flags)},
 		},
 		TrackID: uint32(trackID),
@@ -47,12 +70,21 @@ func mp4PartGenerateVideoTraf(
 		return nil, 0, err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Tfdt{ // <tfdt/>
 		FullBox: gomp4.FullBox{
 			Version: 1,
 		},
 		// sum of decode durations of all earlier samples
 		BaseMediaDecodeTimeV1: uint64(durationGoToMp4(videoSamples[0].dts, fmp4VideoTimescale)),
+=======
+	_, err = w.writeBox(&mp4.Tfdt{ // <tfdt/>
+		FullBox: mp4.FullBox{
+			Version: 1,
+		},
+		// sum of decode durations of all earlier samples
+		BaseMediaDecodeTimeV1: uint64(durationGoToMp4(startDTS, fmp4VideoTimescale)),
+>>>>>>> dahua
 	})
 	if err != nil {
 		return nil, 0, err
@@ -65,8 +97,13 @@ func mp4PartGenerateVideoTraf(
 	flags |= 0x400 // sample flags present
 	flags |= 0x800 // sample composition time offset present or v1
 
+<<<<<<< HEAD
 	trun := &gomp4.Trun{ // <trun/>
 		FullBox: gomp4.FullBox{
+=======
+	trun := &mp4.Trun{ // <trun/>
+		FullBox: mp4.FullBox{
+>>>>>>> dahua
 			Version: 1,
 			Flags:   [3]byte{0, byte(flags >> 8), byte(flags)},
 		},
@@ -81,7 +118,11 @@ func mp4PartGenerateVideoTraf(
 			flags |= 1 << 16 // sample_is_non_sync_sample
 		}
 
+<<<<<<< HEAD
 		trun.Entries = append(trun.Entries, gomp4.TrunEntry{
+=======
+		trun.Entries = append(trun.Entries, mp4.TrunEntry{
+>>>>>>> dahua
 			SampleDuration:                uint32(durationGoToMp4(e.duration(), fmp4VideoTimescale)),
 			SampleSize:                    uint32(len(e.avcc)),
 			SampleFlags:                   flags,
@@ -89,12 +130,20 @@ func mp4PartGenerateVideoTraf(
 		})
 	}
 
+<<<<<<< HEAD
 	trunOffset, err := w.WriteBox(trun)
+=======
+	trunOffset, err := w.writeBox(trun)
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </traf>
+=======
+	err = w.writeBoxEnd() // </traf>
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
@@ -103,11 +152,19 @@ func mp4PartGenerateVideoTraf(
 }
 
 func mp4PartGenerateAudioTraf(
+<<<<<<< HEAD
 	w *mp4.Writer,
 	trackID int,
 	audioTrack *gortsplib.TrackAAC,
 	audioSamples []*fmp4AudioSample,
 ) (*gomp4.Trun, int, error) {
+=======
+	w *mp4Writer,
+	trackID int,
+	audioTrack *gortsplib.TrackAAC,
+	audioSamples []*fmp4AudioSample,
+) (*mp4.Trun, int, error) {
+>>>>>>> dahua
 	/*
 		traf
 		- tfhd
@@ -119,15 +176,24 @@ func mp4PartGenerateAudioTraf(
 		return nil, 0, nil
 	}
 
+<<<<<<< HEAD
 	_, err := w.WriteBoxStart(&gomp4.Traf{}) // <traf>
+=======
+	_, err := w.writeBoxStart(&mp4.Traf{}) // <traf>
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
 
 	flags := 0
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Tfhd{ // <tfhd/>
 		FullBox: gomp4.FullBox{
+=======
+	_, err = w.writeBox(&mp4.Tfhd{ // <tfhd/>
+		FullBox: mp4.FullBox{
+>>>>>>> dahua
 			Flags: [3]byte{2, byte(flags >> 8), byte(flags)},
 		},
 		TrackID: uint32(trackID),
@@ -136,8 +202,13 @@ func mp4PartGenerateAudioTraf(
 		return nil, 0, err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Tfdt{ // <tfdt/>
 		FullBox: gomp4.FullBox{
+=======
+	_, err = w.writeBox(&mp4.Tfdt{ // <tfdt/>
+		FullBox: mp4.FullBox{
+>>>>>>> dahua
 			Version: 1,
 		},
 		// sum of decode durations of all earlier samples
@@ -152,8 +223,13 @@ func mp4PartGenerateAudioTraf(
 	flags |= 0x100 // sample duration present
 	flags |= 0x200 // sample size present
 
+<<<<<<< HEAD
 	trun := &gomp4.Trun{ // <trun/>
 		FullBox: gomp4.FullBox{
+=======
+	trun := &mp4.Trun{ // <trun/>
+		FullBox: mp4.FullBox{
+>>>>>>> dahua
 			Version: 0,
 			Flags:   [3]byte{0, byte(flags >> 8), byte(flags)},
 		},
@@ -161,18 +237,30 @@ func mp4PartGenerateAudioTraf(
 	}
 
 	for _, e := range audioSamples {
+<<<<<<< HEAD
 		trun.Entries = append(trun.Entries, gomp4.TrunEntry{
+=======
+		trun.Entries = append(trun.Entries, mp4.TrunEntry{
+>>>>>>> dahua
 			SampleDuration: uint32(durationGoToMp4(e.duration(), time.Duration(audioTrack.ClockRate()))),
 			SampleSize:     uint32(len(e.au)),
 		})
 	}
 
+<<<<<<< HEAD
 	trunOffset, err := w.WriteBox(trun)
+=======
+	trunOffset, err := w.writeBox(trun)
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </traf>
+=======
+	err = w.writeBoxEnd() // </traf>
+>>>>>>> dahua
 	if err != nil {
 		return nil, 0, err
 	}
@@ -185,6 +273,10 @@ func mp4PartGenerate(
 	audioTrack *gortsplib.TrackAAC,
 	videoSamples []*fmp4VideoSample,
 	audioSamples []*fmp4AudioSample,
+<<<<<<< HEAD
+=======
+	startDTS time.Duration,
+>>>>>>> dahua
 ) ([]byte, error) {
 	/*
 		moof
@@ -194,14 +286,24 @@ func mp4PartGenerate(
 		mdat
 	*/
 
+<<<<<<< HEAD
 	w := mp4.NewWriter()
 
 	moofOffset, err := w.WriteBoxStart(&gomp4.Moof{}) // <moof>
+=======
+	w := newMP4Writer()
+
+	moofOffset, err := w.writeBoxStart(&mp4.Moof{}) // <moof>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Mfhd{ // <mfhd/>
+=======
+	_, err = w.writeBox(&mp4.Mfhd{ // <mfhd/>
+>>>>>>> dahua
 		SequenceNumber: 0,
 	})
 	if err != nil {
@@ -210,12 +312,20 @@ func mp4PartGenerate(
 
 	trackID := 1
 
+<<<<<<< HEAD
 	var videoTrun *gomp4.Trun
+=======
+	var videoTrun *mp4.Trun
+>>>>>>> dahua
 	var videoTrunOffset int
 	if videoTrack != nil {
 		var err error
 		videoTrun, videoTrunOffset, err = mp4PartGenerateVideoTraf(
+<<<<<<< HEAD
 			w, trackID, videoSamples)
+=======
+			w, trackID, videoSamples, startDTS)
+>>>>>>> dahua
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +333,11 @@ func mp4PartGenerate(
 		trackID++
 	}
 
+<<<<<<< HEAD
 	var audioTrun *gomp4.Trun
+=======
+	var audioTrun *mp4.Trun
+>>>>>>> dahua
 	var audioTrunOffset int
 	if audioTrack != nil {
 		var err error
@@ -233,12 +347,20 @@ func mp4PartGenerate(
 		}
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </moof>
+=======
+	err = w.writeBoxEnd() // </moof>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	mdat := &gomp4.Mdat{} // <mdat/>
+=======
+	mdat := &mp4.Mdat{} // <mdat/>
+>>>>>>> dahua
 
 	dataSize := 0
 	videoDataSize := 0
@@ -271,14 +393,22 @@ func mp4PartGenerate(
 		}
 	}
 
+<<<<<<< HEAD
 	mdatOffset, err := w.WriteBox(mdat)
+=======
+	mdatOffset, err := w.writeBox(mdat)
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
 	if videoTrack != nil {
 		videoTrun.DataOffset = int32(mdatOffset - moofOffset + 8)
+<<<<<<< HEAD
 		err = w.RewriteBox(videoTrunOffset, videoTrun)
+=======
+		err = w.rewriteBox(videoTrunOffset, videoTrun)
+>>>>>>> dahua
 		if err != nil {
 			return nil, err
 		}
@@ -286,13 +416,21 @@ func mp4PartGenerate(
 
 	if audioTrack != nil && audioTrun != nil {
 		audioTrun.DataOffset = int32(videoDataSize + mdatOffset - moofOffset + 8)
+<<<<<<< HEAD
 		err = w.RewriteBox(audioTrunOffset, audioTrun)
+=======
+		err = w.rewriteBox(audioTrunOffset, audioTrun)
+>>>>>>> dahua
 		if err != nil {
 			return nil, err
 		}
 	}
 
+<<<<<<< HEAD
 	return w.Bytes(), nil
+=======
+	return w.bytes(), nil
+>>>>>>> dahua
 }
 
 func fmp4PartName(id uint64) string {
@@ -303,6 +441,10 @@ type muxerVariantFMP4Part struct {
 	videoTrack *gortsplib.TrackH264
 	audioTrack *gortsplib.TrackAAC
 	id         uint64
+<<<<<<< HEAD
+=======
+	startDTS   time.Duration
+>>>>>>> dahua
 
 	isIndependent    bool
 	videoSamples     []*fmp4VideoSample
@@ -315,11 +457,19 @@ func newMuxerVariantFMP4Part(
 	videoTrack *gortsplib.TrackH264,
 	audioTrack *gortsplib.TrackAAC,
 	id uint64,
+<<<<<<< HEAD
+=======
+	startDTS time.Duration,
+>>>>>>> dahua
 ) *muxerVariantFMP4Part {
 	p := &muxerVariantFMP4Part{
 		videoTrack: videoTrack,
 		audioTrack: audioTrack,
 		id:         id,
+<<<<<<< HEAD
+=======
+		startDTS:   startDTS,
+>>>>>>> dahua
 	}
 
 	if videoTrack == nil {
@@ -360,7 +510,12 @@ func (p *muxerVariantFMP4Part) finalize() error {
 			p.videoTrack,
 			p.audioTrack,
 			p.videoSamples,
+<<<<<<< HEAD
 			p.audioSamples)
+=======
+			p.audioSamples,
+			p.startDTS)
+>>>>>>> dahua
 		if err != nil {
 			return err
 		}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aler9/gortsplib"
 )
@@ -21,11 +22,28 @@ func newMuxerPrimaryPlaylist(
 	fmp4 bool,
 	videoTrack *gortsplib.TrackH264,
 	audioTrack *gortsplib.TrackAAC,
+	streamName string,
 ) *muxerPrimaryPlaylist {
 	return &muxerPrimaryPlaylist{
 		fmp4:       fmp4,
 		videoTrack: videoTrack,
 		audioTrack: audioTrack,
+		streamName: streamName,
+	}
+}
+
+func (p *muxerPrimaryPlaylist) getPrem(streamname string) (int, error) {
+	var Client = &http.Client{Timeout: 5 * time.Second}
+	r, err := Client.Get("https://goodgame.ru/api/4/transcoding/" + streamname)
+	if err != nil {
+		return 0, err
+	}
+	defer r.Body.Close()
+	api, _ := ioutil.ReadAll(r.Body)
+	if string(api) == "true" {
+		return 1, nil
+	} else {
+		return 0, nil
 	}
 }
 
@@ -37,6 +55,7 @@ func (p *muxerPrimaryPlaylist) file() *MuxerFileResponse {
 		},
 		Body: func() io.Reader {
 			var codecs []string
+
 
 			if p.videoTrack != nil {
 				sps := p.videoTrack.SPS()
@@ -63,6 +82,7 @@ func (p *muxerPrimaryPlaylist) file() *MuxerFileResponse {
 				return bytes.NewReader([]byte("#EXTM3U\n" +
 					"#EXT-X-VERSION:9\n" +
 					"#EXT-X-INDEPENDENT-SEGMENTS\n" +
+
 					"\n" +
 					"#EXT-X-STREAM-INF:BANDWIDTH=200000,CODECS=\"" + strings.Join(codecs, ",") + "\"\n" +
 					"stream.m3u8\n" +

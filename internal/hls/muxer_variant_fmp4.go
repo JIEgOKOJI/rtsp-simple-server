@@ -13,6 +13,7 @@ const (
 	fmp4VideoTimescale = 90000
 )
 
+
 type fmp4VideoSample struct {
 	nalus      [][]byte
 	pts        time.Duration
@@ -20,6 +21,7 @@ type fmp4VideoSample struct {
 	avcc       []byte
 	idrPresent bool
 	next       *fmp4VideoSample
+
 }
 
 func (s fmp4VideoSample) duration() time.Duration {
@@ -57,10 +59,12 @@ func newMuxerVariantFMP4(
 	videoTrack *gortsplib.TrackH264,
 	audioTrack *gortsplib.TrackAAC,
 ) *muxerVariantFMP4 {
+
 	v := &muxerVariantFMP4{
 		videoTrack: videoTrack,
 		audioTrack: audioTrack,
 	}
+
 
 	v.playlist = newMuxerVariantFMP4Playlist(
 		lowLatency,
@@ -97,6 +101,7 @@ func (v *muxerVariantFMP4) writeAAC(pts time.Duration, aus [][]byte) error {
 }
 
 func (v *muxerVariantFMP4) file(name string, msn string, part string, skip string) *MuxerFileResponse {
+<<<<<<< HEAD
 	if name == "init.mp4" {
 		v.mutex.Lock()
 		defer v.mutex.Unlock()

@@ -3,9 +3,9 @@
 # General parameters
 
 # Sets the verbosity of the program; available values are "error", "warn", "info", "debug".
-logLevel: info
+logLevel: error
 # Destinations of log messages; available values are "stdout", "file" and "syslog".
-logDestinations: [stdout]
+logDestinations: [file]
 # If "file" is in logDestinations, this is the file which will receive the logs.
 logFile: rtsp-simple-server.log
 
@@ -15,7 +15,7 @@ readTimeout: 10s
 writeTimeout: 10s
 # Number of read buffers.
 # A higher number allows a wider throughput, a lower number allows to save RAM.
-readBufferCount: 512
+readBufferCount: 2048
 
 # HTTP URL to perform external authentication.
 # Every time a user wants to authenticate, the server calls this URL
@@ -59,7 +59,7 @@ runOnConnectRestart: no
 # RTSP parameters
 
 # Disable support for the RTSP protocol.
-rtspDisable: no
+rtspDisable: yes
 # List of enabled RTSP transport protocols.
 # UDP is the most performant, but doesn't work when there's a NAT/firewall between
 # server and clients, and doesn't support encryption.
@@ -100,7 +100,7 @@ authMethods: [basic, digest]
 # Disable support for the RTMP protocol.
 rtmpDisable: no
 # Address of the RTMP listener.
-rtmpAddress: :1935
+rtmpAddress: :1941
 
 ###############################################
 # HLS parameters
@@ -108,19 +108,19 @@ rtmpAddress: :1935
 # Disable support for the HLS protocol.
 hlsDisable: no
 # Address of the HLS listener.
-hlsAddress: :8888
+hlsAddress: :788
 # By default, HLS is generated only when requested by a user.
 # This option allows to generate it always, avoiding the delay between request and generation.
-hlsAlwaysRemux: no
+hlsAlwaysRemux: yes
 # Variant of the HLS protocol to use. Available options are:
 # * mpegts - uses MPEG-TS segments, for maximum compatibility.
 # * fmp4 - uses fragmented MP4 segments, more efficient.
 # * lowLatency - uses Low-Latency HLS.
-hlsVariant: mpegts
-# Number of HLS segments to keep on the server.
-# Segments allow to seek through the stream.
-# Their number doesn't influence latency.
-hlsSegmentCount: 7
+hlsVariant: lowLatency
+# Number of HLS segments to generate.
+# Increasing segments allows more buffering,
+# Decreasing segments decreases latency.
+hlsSegmentCount: 4
 # Minimum duration of each segment.
 # A player usually puts 3 segments in a buffer before reproducing the stream.
 # The final segment duration is also influenced by the interval between IDR frames,
@@ -133,6 +133,11 @@ hlsSegmentDuration: 1s
 # Part duration is influenced by the distance between video/audio samples
 # and is adjusted in order to produce segments with a similar duration.
 hlsPartDuration: 200ms
+=======
+hlsSegmentDuration: 2s
+# Minimum duration of each part.
+# Parts are used in Low-Latency HLS in place of segments.
+hlsPartDuration: 500ms
 # Maximum size of each segment.
 # This prevents RAM exhaustion.
 hlsSegmentMaxSize: 50M

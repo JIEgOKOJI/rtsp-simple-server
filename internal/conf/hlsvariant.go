@@ -12,6 +12,7 @@ type HLSVariant hls.MuxerVariant
 
 // supported HLS variants.
 const (
+<<<<<<< HEAD
 	HLSVariantMPEGTS     HLSVariant = HLSVariant(hls.MuxerVariantMPEGTS)
 	HLSVariantFMP4       HLSVariant = HLSVariant(hls.MuxerVariantFMP4)
 	HLSVariantLowLatency HLSVariant = HLSVariant(hls.MuxerVariantLowLatency)

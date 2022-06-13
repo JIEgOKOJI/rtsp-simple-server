@@ -83,6 +83,10 @@ func newMuxerVariantFMP4Segment(
 		s.videoTrack,
 		s.audioTrack,
 		s.genPartID(),
+<<<<<<< HEAD
+=======
+		s.startDTS,
+>>>>>>> dahua
 	)
 
 	return s
@@ -117,7 +121,11 @@ func (s *muxerVariantFMP4Segment) finalize(
 	s.currentPart = nil
 
 	if s.videoTrack != nil {
+<<<<<<< HEAD
 		s.renderedDuration = nextVideoSample.dts - s.startDTS
+=======
+		s.renderedDuration = nextVideoSample.pts - s.startDTS
+>>>>>>> dahua
 	} else {
 		s.renderedDuration = 0
 		for _, pa := range s.parts {
@@ -139,7 +147,10 @@ func (s *muxerVariantFMP4Segment) writeH264(sample *fmp4VideoSample, adjustedPar
 
 	s.size += size
 
+<<<<<<< HEAD
 	// switch part
+=======
+>>>>>>> dahua
 	if s.lowLatency &&
 		s.currentPart.duration() >= adjustedPartDuration {
 		err := s.currentPart.finalize()
@@ -154,6 +165,10 @@ func (s *muxerVariantFMP4Segment) writeH264(sample *fmp4VideoSample, adjustedPar
 			s.videoTrack,
 			s.audioTrack,
 			s.genPartID(),
+<<<<<<< HEAD
+=======
+			sample.next.dts,
+>>>>>>> dahua
 		)
 	}
 
@@ -171,7 +186,10 @@ func (s *muxerVariantFMP4Segment) writeAAC(sample *fmp4AudioSample, adjustedPart
 
 	s.size += size
 
+<<<<<<< HEAD
 	// switch part
+=======
+>>>>>>> dahua
 	if s.lowLatency && s.videoTrack == nil &&
 		s.currentPart.duration() >= adjustedPartDuration {
 		err := s.currentPart.finalize()
@@ -186,6 +204,10 @@ func (s *muxerVariantFMP4Segment) writeAAC(sample *fmp4AudioSample, adjustedPart
 			s.videoTrack,
 			s.audioTrack,
 			s.genPartID(),
+<<<<<<< HEAD
+=======
+			sample.next.pts,
+>>>>>>> dahua
 		)
 	}
 

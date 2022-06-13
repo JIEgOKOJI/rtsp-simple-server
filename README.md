@@ -791,11 +791,13 @@ where `mystream` is the name of a stream that is being published.
 
 The simples way to embed a live stream into a web page consists in using an iframe tag:
 
+
 ```
 <iframe src="http://rtsp-simple-server-ip:8888/mystream" scrolling="no"></iframe>
 ```
 
 Alternatively you can create a video tag that points directly to the stream playlist:
+
 
 ```
 <video src="http://localhost:8888/mystream/index.m3u8"></video>

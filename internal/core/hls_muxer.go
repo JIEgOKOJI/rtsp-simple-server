@@ -282,7 +282,13 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	}
 
 	m.path = res.path
+	streamName := "NoName"
+	if len(strings.Split(m.pathName, "/")) == 2 {
+		streamName = strings.Split(m.pathName, "/")[1]
+		streamName = strings.Split(streamName, "_")[0]
+	}
 
+	fmt.Println("streamName", streamName)
 	defer func() {
 		m.path.onReaderRemove(pathReaderRemoveReq{author: m})
 	}()
@@ -325,6 +331,7 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	}
 
 	var err error
+
 	m.muxer, err = hls.NewMuxer(
 		hls.MuxerVariant(m.hlsVariant),
 		m.hlsSegmentCount,
@@ -333,6 +340,7 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 		uint64(m.hlsSegmentMaxSize),
 		videoTrack,
 		audioTrack,
+		streamName,
 	)
 	if err != nil {
 		return fmt.Errorf("muxer error: %v", err)

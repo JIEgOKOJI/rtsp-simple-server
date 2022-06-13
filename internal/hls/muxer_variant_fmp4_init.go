@@ -147,7 +147,7 @@ func mp4InitGenerateVideoTrack(w *mp4.Writer, trackID int, videoTrack *gortsplib
 		return err
 	}
 
-	_, err = w.WriteBoxStart(&gomp4.Stsd{ // <stsd>
+	_, err = w.WriteBoxStart(&gomp4.Stsd{ // <stsd>  
 		EntryCount: 1,
 	})
 	if err != nil {
@@ -294,6 +294,7 @@ func mp4InitGenerateAudioTrack(w *mp4.Writer, trackID int, audioTrack *gortsplib
 		return err
 	}
 
+
 	_, err = w.WriteBox(&gomp4.Tkhd{ // <tkhd/>
 		FullBox: gomp4.FullBox{
 			Flags: [3]byte{0, 0, 3},
@@ -369,6 +370,7 @@ func mp4InitGenerateAudioTrack(w *mp4.Writer, trackID int, audioTrack *gortsplib
 	if err != nil {
 		return err
 	}
+
 
 	_, err = w.WriteBoxStart(&gomp4.Stbl{}) // <stbl>
 	if err != nil {
@@ -466,10 +468,12 @@ func mp4InitGenerateAudioTrack(w *mp4.Writer, trackID int, audioTrack *gortsplib
 		return err
 	}
 
+
 	err = w.WriteBoxEnd() // </stsd>
 	if err != nil {
 		return err
 	}
+
 
 	_, err = w.WriteBox(&gomp4.Stts{ // <stts>
 	})
@@ -489,28 +493,48 @@ func mp4InitGenerateAudioTrack(w *mp4.Writer, trackID int, audioTrack *gortsplib
 		return err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Stco{ // <stco>
+=======
+	_, err = w.writeBox(&mp4.Stco{ // <stco>
+>>>>>>> dahua
 	})
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </stbl>
+=======
+	err = w.writeBoxEnd() // </stbl>
+>>>>>>> dahua
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </minf>
+=======
+	err = w.writeBoxEnd() // </minf>
+>>>>>>> dahua
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </mdia>
+=======
+	err = w.writeBoxEnd() // </mdia>
+>>>>>>> dahua
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </trak>
+=======
+	err = w.writeBoxEnd() // </trak>
+>>>>>>> dahua
 	if err != nil {
 		return err
 	}
@@ -530,12 +554,21 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 		  - trex (audio)
 	*/
 
+<<<<<<< HEAD
 	w := mp4.NewWriter()
 
 	_, err := w.WriteBox(&gomp4.Ftyp{ // <ftyp/>
 		MajorBrand:   [4]byte{'m', 'p', '4', '2'},
 		MinorVersion: 1,
 		CompatibleBrands: []gomp4.CompatibleBrandElem{
+=======
+	w := newMP4Writer()
+
+	_, err := w.writeBox(&mp4.Ftyp{ // <ftyp/>
+		MajorBrand:   [4]byte{'m', 'p', '4', '2'},
+		MinorVersion: 1,
+		CompatibleBrands: []mp4.CompatibleBrandElem{
+>>>>>>> dahua
 			{CompatibleBrand: [4]byte{'m', 'p', '4', '1'}},
 			{CompatibleBrand: [4]byte{'m', 'p', '4', '2'}},
 			{CompatibleBrand: [4]byte{'i', 's', 'o', 'm'}},
@@ -546,12 +579,20 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBoxStart(&gomp4.Moov{}) // <moov>
+=======
+	_, err = w.writeBoxStart(&mp4.Moov{}) // <moov>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBox(&gomp4.Mvhd{ // <mvhd/>
+=======
+	_, err = w.writeBox(&mp4.Mvhd{ // <mvhd/>
+>>>>>>> dahua
 		Timescale:   1000,
 		Rate:        65536,
 		Volume:      256,
@@ -580,7 +621,11 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 		}
 	}
 
+<<<<<<< HEAD
 	_, err = w.WriteBoxStart(&gomp4.Mvex{}) // <mvex>
+=======
+	_, err = w.writeBoxStart(&mp4.Mvex{}) // <mvex>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +633,11 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 	trackID = 1
 
 	if videoTrack != nil {
+<<<<<<< HEAD
 		_, err = w.WriteBox(&gomp4.Trex{ // <trex/>
+=======
+		_, err = w.writeBox(&mp4.Trex{ // <trex/>
+>>>>>>> dahua
 			TrackID:                       uint32(trackID),
 			DefaultSampleDescriptionIndex: 1,
 		})
@@ -600,7 +649,11 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 	}
 
 	if audioTrack != nil {
+<<<<<<< HEAD
 		_, err = w.WriteBox(&gomp4.Trex{ // <trex/>
+=======
+		_, err = w.writeBox(&mp4.Trex{ // <trex/>
+>>>>>>> dahua
 			TrackID:                       uint32(trackID),
 			DefaultSampleDescriptionIndex: 1,
 		})
@@ -609,15 +662,27 @@ func mp4InitGenerate(videoTrack *gortsplib.TrackH264, audioTrack *gortsplib.Trac
 		}
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </mvex>
+=======
+	err = w.writeBoxEnd() // </mvex>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	err = w.WriteBoxEnd() // </moov>
+=======
+	err = w.writeBoxEnd() // </moov>
+>>>>>>> dahua
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	return w.Bytes(), nil
+=======
+	return w.bytes(), nil
+>>>>>>> dahua
 }
