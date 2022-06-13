@@ -430,7 +430,6 @@ func (pa *path) run() {
 
 						pa.onDemandStaticSourceScheduleClose()
 
-
 						for _, req := range pa.describeRequestsOnHold {
 							req.res <- pathDescribeRes{
 								stream: pa.stream,
@@ -442,9 +441,6 @@ func (pa *path) run() {
 							pa.handleReaderSetupPlayPost(req)
 						}
 						pa.setupPlayRequestsOnHold = nil
-
-
-						pa.onDemandStaticSourceScheduleClose()
 					}
 
 					req.res <- pathSourceStaticSetReadyRes{stream: pa.stream}

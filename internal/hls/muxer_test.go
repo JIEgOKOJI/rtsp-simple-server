@@ -72,11 +72,9 @@ func TestMuxerVideoAudio(t *testing.T) {
 
 	require.Equal(t, "#EXTM3U\n"+
 		"#EXT-X-VERSION:3\n"+
-
 		"#EXT-X-INDEPENDENT-SEGMENTS\n"+
 		"\n"+
 		"#EXT-X-STREAM-INF:BANDWIDTH=200000,CODECS=\"avc1.42c028,mp4a.40.2\"\n"+
-
 		"stream.m3u8\n", string(byts))
 
 	byts, err = ioutil.ReadAll(m.File("stream.m3u8", "", "", "").Body)
@@ -211,11 +209,9 @@ func TestMuxerVideoOnly(t *testing.T) {
 
 	require.Equal(t, "#EXTM3U\n"+
 		"#EXT-X-VERSION:3\n"+
-
 		"#EXT-X-INDEPENDENT-SEGMENTS\n"+
 		"\n"+
 		"#EXT-X-STREAM-INF:BANDWIDTH=200000,CODECS=\"avc1.42c028\"\n"+
-
 		"stream.m3u8\n", string(byts))
 
 	byts, err = ioutil.ReadAll(m.File("stream.m3u8", "", "", "").Body)
@@ -301,9 +297,7 @@ func TestMuxerAudioOnly(t *testing.T) {
 
 	require.Equal(t, "#EXTM3U\n"+
 		"#EXT-X-VERSION:3\n"+
-
 		"#EXT-X-INDEPENDENT-SEGMENTS\n"+
-
 		"\n"+
 		"#EXT-X-STREAM-INF:BANDWIDTH=200000,CODECS=\"mp4a.40.2\"\n"+
 		"stream.m3u8\n", string(byts))
@@ -360,9 +354,7 @@ func TestMuxerAudioOnly(t *testing.T) {
 }
 
 func TestMuxerCloseBeforeFirstSegmentReader(t *testing.T) {
-
 	videoTrack, err := gortsplib.NewTrackH264(96, testSPS, []byte{0x08}, nil)
-
 	require.NoError(t, err)
 
 	m, err := NewMuxer(MuxerVariantMPEGTS, 3, 1*time.Second, 0, 50*1024*1024, videoTrack, nil)

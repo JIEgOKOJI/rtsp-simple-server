@@ -12,7 +12,6 @@ import (
 	gopath "path"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -169,20 +168,7 @@ func (s *hlsServer) close() {
 	s.ctxCancel()
 	s.wg.Wait()
 }
-func (s *hlsServer) getPrem(streamname string) (int, error) {
-	var Client = &http.Client{Timeout: 5 * time.Second}
-	r, err := Client.Get("https://goodgame.ru/api/4/transcoding/" + streamname)
-	if err != nil {
-		return 0, err
-	}
-	defer r.Body.Close()
-	api, _ := ioutil.ReadAll(r.Body)
-	if string(api) == "true" {
-		return 1, nil
-	} else {
-		return 0, nil
-	}
-}
+
 func (s *hlsServer) run() {
 	defer s.wg.Done()
 

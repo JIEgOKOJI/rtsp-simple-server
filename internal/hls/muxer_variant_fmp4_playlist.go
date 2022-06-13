@@ -116,14 +116,10 @@ func (p *muxerVariantFMP4Playlist) close() {
 }
 
 func (p *muxerVariantFMP4Playlist) hasContent() bool {
-<<<<<<< HEAD
 	if p.lowLatency {
 		return len(p.segments) >= 1
 	}
 	return len(p.segments) >= 2
-=======
-	return len(p.segments) > 0
->>>>>>> dahua
 }
 
 func (p *muxerVariantFMP4Playlist) hasPart(segmentID uint64, partID uint64) bool {
@@ -366,26 +362,6 @@ func (p *muxerVariantFMP4Playlist) fullPlaylist(isDeltaUpdate bool) io.Reader {
 
 func (p *muxerVariantFMP4Playlist) segmentReader(fname string) *MuxerFileResponse {
 	switch {
-<<<<<<< HEAD
-=======
-	case fname == "init.mp4":
-		p.mutex.Lock()
-		defer p.mutex.Unlock()
-
-		byts, err := mp4InitGenerate(p.videoTrack, p.audioTrack)
-		if err != nil {
-			return &MuxerFileResponse{Status: http.StatusInternalServerError}
-		}
-
-		return &MuxerFileResponse{
-			Status: http.StatusOK,
-			Header: map[string]string{
-				"Content-Type": "video/mp4",
-			},
-			Body: bytes.NewReader(byts),
-		}
-
->>>>>>> dahua
 	case strings.HasPrefix(fname, "seg"):
 		base := strings.TrimSuffix(fname, ".mp4")
 
@@ -465,11 +441,7 @@ func (p *muxerVariantFMP4Playlist) onSegmentFinalized(segment *muxerVariantFMP4S
 		defer p.mutex.Unlock()
 
 		// create initial gap
-<<<<<<< HEAD
 		if p.lowLatency && len(p.segments) == 0 {
-=======
-		if len(p.segments) == 0 {
->>>>>>> dahua
 			for i := 0; i < p.segmentCount; i++ {
 				p.segments = append(p.segments, &muxerVariantFMP4Gap{
 					renderedDuration: segment.renderedDuration,

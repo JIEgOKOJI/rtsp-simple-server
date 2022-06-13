@@ -26,19 +26,11 @@ type muxerVariantMPEGTSSegmenter struct {
 	audioTrack      *gortsplib.TrackAAC
 	onSegmentReady  func(*muxerVariantMPEGTSSegment)
 
-<<<<<<< HEAD
 	writer            *astits.Muxer
 	currentSegment    *muxerVariantMPEGTSSegment
 	videoDTSExtractor *h264.DTSExtractor
 	startPCR          time.Time
 	startDTS          time.Duration
-=======
-	writer         *astits.Muxer
-	currentSegment *muxerVariantMPEGTSSegment
-	videoDTSEst    *h264.DTSEstimator
-	startPCR       time.Time
-	startPTS       time.Duration
->>>>>>> dahua
 }
 
 func newMuxerVariantMPEGTSSegmenter(
@@ -88,10 +80,7 @@ func newMuxerVariantMPEGTSSegmenter(
 func (m *muxerVariantMPEGTSSegmenter) writeH264(pts time.Duration, nalus [][]byte) error {
 	now := time.Now()
 	idrPresent := h264.IDRPresent(nalus)
-<<<<<<< HEAD
 	var dts time.Duration
-=======
->>>>>>> dahua
 
 	if m.currentSegment == nil {
 		// skip groups silently until we find one with a IDR
@@ -99,7 +88,6 @@ func (m *muxerVariantMPEGTSSegmenter) writeH264(pts time.Duration, nalus [][]byt
 			return nil
 		}
 
-<<<<<<< HEAD
 		m.videoDTSExtractor = h264.NewDTSExtractor()
 
 		var err error
@@ -130,30 +118,12 @@ func (m *muxerVariantMPEGTSSegmenter) writeH264(pts time.Duration, nalus [][]byt
 		if idrPresent &&
 			(dts-*m.currentSegment.startDTS) >= m.segmentDuration {
 			m.currentSegment.endDTS = dts
-=======
-		// create first segment
-		m.currentSegment = newMuxerVariantMPEGTSSegment(now, m.segmentMaxSize,
-			m.videoTrack, m.audioTrack, m.writer.WriteData)
-		m.startPCR = now
-		m.videoDTSEst = h264.NewDTSEstimator()
-		m.startPTS = pts
-		pts = 0
-	} else {
-		pts -= m.startPTS
-
-		// switch segment
-		if idrPresent &&
-			m.currentSegment.startPTS != nil &&
-			(pts-*m.currentSegment.startPTS) >= m.segmentDuration {
-			m.currentSegment.endPTS = pts
->>>>>>> dahua
 			m.onSegmentReady(m.currentSegment)
 			m.currentSegment = newMuxerVariantMPEGTSSegment(now, m.segmentMaxSize,
 				m.videoTrack, m.audioTrack, m.writer.WriteData)
 		}
 	}
 
-<<<<<<< HEAD
 	err := m.currentSegment.writeH264(
 		now.Sub(m.startPCR),
 		dts,
@@ -161,17 +131,6 @@ func (m *muxerVariantMPEGTSSegmenter) writeH264(pts time.Duration, nalus [][]byt
 		idrPresent,
 		nalus)
 	if err != nil {
-=======
-	dts := m.videoDTSEst.Feed(pts)
-
-	err := m.currentSegment.writeH264(now.Sub(m.startPCR), dts,
-		pts, idrPresent, nalus)
-	if err != nil {
-		if m.currentSegment.buf.Len() > 0 {
-			m.onSegmentReady(m.currentSegment)
-		}
-		m.currentSegment = nil
->>>>>>> dahua
 		return err
 	}
 
@@ -183,7 +142,6 @@ func (m *muxerVariantMPEGTSSegmenter) writeAAC(pts time.Duration, aus [][]byte) 
 
 	if m.videoTrack == nil {
 		if m.currentSegment == nil {
-<<<<<<< HEAD
 			m.startPCR = now
 			m.startDTS = pts
 			pts = 0
@@ -198,22 +156,6 @@ func (m *muxerVariantMPEGTSSegmenter) writeAAC(pts time.Duration, aus [][]byte) 
 			if m.currentSegment.audioAUCount >= mpegtsSegmentMinAUCount &&
 				(pts-*m.currentSegment.startDTS) >= m.segmentDuration {
 				m.currentSegment.endDTS = pts
-=======
-			// create first segment
-			m.currentSegment = newMuxerVariantMPEGTSSegment(now, m.segmentMaxSize,
-				m.videoTrack, m.audioTrack, m.writer.WriteData)
-			m.startPCR = now
-			m.startPTS = pts
-			pts = 0
-		} else {
-			pts -= m.startPTS
-
-			// switch segment
-			if m.currentSegment.audioAUCount >= mpegtsSegmentMinAUCount &&
-				m.currentSegment.startPTS != nil &&
-				(pts-*m.currentSegment.startPTS) >= m.segmentDuration {
-				m.currentSegment.endPTS = pts
->>>>>>> dahua
 				m.onSegmentReady(m.currentSegment)
 				m.currentSegment = newMuxerVariantMPEGTSSegment(now, m.segmentMaxSize,
 					m.videoTrack, m.audioTrack, m.writer.WriteData)
@@ -225,22 +167,11 @@ func (m *muxerVariantMPEGTSSegmenter) writeAAC(pts time.Duration, aus [][]byte) 
 			return nil
 		}
 
-<<<<<<< HEAD
 		pts -= m.startDTS
-=======
-		pts -= m.startPTS
->>>>>>> dahua
 	}
 
 	err := m.currentSegment.writeAAC(now.Sub(m.startPCR), pts, aus)
 	if err != nil {
-<<<<<<< HEAD
-=======
-		if m.currentSegment.buf.Len() > 0 {
-			m.onSegmentReady(m.currentSegment)
-		}
-		m.currentSegment = nil
->>>>>>> dahua
 		return err
 	}
 

@@ -57,11 +57,7 @@ func newMuxerVariantMPEGTSSegment(
 }
 
 func (t *muxerVariantMPEGTSSegment) duration() time.Duration {
-<<<<<<< HEAD:internal/hls/muxer_variant_mpegts_segment.go
 	return t.endDTS - *t.startDTS
-=======
-	return t.endPTS - *t.startPTS
->>>>>>> dahua:internal/hls/muxer_variant_mpegts_segment.go
 }
 
 func (t *muxerVariantMPEGTSSegment) write(p []byte) (int, error) {
@@ -203,10 +199,6 @@ func (t *muxerVariantMPEGTSSegment) writeAAC(
 
 	if t.videoTrack == nil {
 		t.audioAUCount += len(aus)
-<<<<<<< HEAD:internal/hls/muxer_variant_mpegts_segment.go
-=======
-	}
->>>>>>> dahua:internal/hls/muxer_variant_mpegts_segment.go
 
 		if t.startDTS == nil {
 			t.startDTS = &pts

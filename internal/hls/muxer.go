@@ -29,7 +29,6 @@ func NewMuxer(
 	segmentMaxSize uint64,
 	videoTrack *gortsplib.TrackH264,
 	audioTrack *gortsplib.TrackAAC,
-	streamName string,
 ) (*Muxer, error) {
 	m := &Muxer{}
 
@@ -68,7 +67,6 @@ func NewMuxer(
 
 	m.primaryPlaylist = newMuxerPrimaryPlaylist(variant != MuxerVariantMPEGTS, videoTrack, audioTrack)
 
-
 	return m, nil
 }
 
@@ -89,7 +87,6 @@ func (m *Muxer) WriteAAC(pts time.Duration, aus [][]byte) error {
 
 // File returns a file reader.
 func (m *Muxer) File(name string, msn string, part string, skip string) *MuxerFileResponse {
-
 	if name == "index.m3u8" {
 		return m.primaryPlaylist.file()
 	}

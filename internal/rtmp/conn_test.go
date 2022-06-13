@@ -1,10 +1,6 @@
 package rtmp
 
 import (
-<<<<<<< HEAD
-=======
-	"bufio"
->>>>>>> dahua
 	"net"
 	"net/url"
 	"strings"
@@ -16,13 +12,9 @@ import (
 	"github.com/notedit/rtmp/format/flv/flvio"
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
 	"github.com/aler9/rtsp-simple-server/internal/rtmp/bytecounter"
 	"github.com/aler9/rtsp-simple-server/internal/rtmp/handshake"
 	"github.com/aler9/rtsp-simple-server/internal/rtmp/message"
-=======
-	"github.com/aler9/rtsp-simple-server/internal/rtmp/base"
->>>>>>> dahua
 )
 
 func splitPath(u *url.URL) (app, stream string) {
@@ -141,7 +133,6 @@ func TestReadTracks(t *testing.T) {
 			err = handshake.C0S0{}.Read(bc)
 			require.NoError(t, err)
 
-<<<<<<< HEAD
 			// S->C handshake S1
 			s1 := handshake.C1S1{}
 			err = s1.Read(bc, false)
@@ -156,31 +147,6 @@ func TestReadTracks(t *testing.T) {
 			require.NoError(t, err)
 
 			mrw := message.NewReadWriter(bc)
-=======
-			// C->S handshake C0
-			err = base.HandshakeC0{}.Write(conn)
-			require.NoError(t, err)
-
-			// C->S handshake C1
-			err = base.HandshakeC1{}.Write(conn)
-			require.NoError(t, err)
-
-			// S->C handshake S0
-			err = base.HandshakeS0{}.Read(conn)
-			require.NoError(t, err)
-
-			// S->C handshake S1+S2
-			s1s2 := make([]byte, 1536*2)
-			_, err = conn.Read(s1s2)
-			require.NoError(t, err)
-
-			// C->S handshake C2
-			err = base.HandshakeC2{}.Write(conn, s1s2)
-			require.NoError(t, err)
-
-			mw := base.NewMessageWriter(conn)
-			mr := base.NewMessageReader(bufio.NewReader(conn))
->>>>>>> dahua
 
 			// C->S connect
 			err = mrw.Write(&message.MsgCommandAMF0{
@@ -200,7 +166,6 @@ func TestReadTracks(t *testing.T) {
 					},
 				},
 			})
-<<<<<<< HEAD
 			require.NoError(t, err)
 
 			// S->C window acknowledgement size
@@ -227,50 +192,6 @@ func TestReadTracks(t *testing.T) {
 
 			// S->C result
 			msg, err = mrw.Read()
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID: 3,
-				Type:          base.MessageTypeCommandAMF0,
-				Body:          byts,
-			})
-			require.NoError(t, err)
-
-			// S->C window acknowledgement size
-			msg, err := mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, &base.Message{
-				ChunkStreamID: base.ControlChunkStreamID,
-				Type:          base.MessageTypeSetWindowAckSize,
-				Body:          []byte{0x00, 38, 37, 160},
-			}, msg)
-
-			// S->C set peer bandwidth
-			msg, err = mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, &base.Message{
-				ChunkStreamID: base.ControlChunkStreamID,
-				Type:          base.MessageTypeSetPeerBandwidth,
-				Body:          []byte{0x00, 0x26, 0x25, 0xa0, 0x02},
-			}, msg)
-
-			// S->C set chunk size
-			msg, err = mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, &base.Message{
-				ChunkStreamID: base.ControlChunkStreamID,
-				Type:          base.MessageTypeSetChunkSize,
-				Body:          []byte{0x00, 0x01, 0x00, 0x00},
-			}, msg)
-
-			mr.SetChunkSize(65536)
-
-			// S->C result
-			msg, err = mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, uint8(3), msg.ChunkStreamID)
-			require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-			arr, err := flvio.ParseAMFVals(msg.Body, false)
->>>>>>> dahua
 			require.NoError(t, err)
 			require.Equal(t, &message.MsgCommandAMF0{
 				ChunkStreamID: 3,
@@ -291,68 +212,36 @@ func TestReadTracks(t *testing.T) {
 			}, msg)
 
 			// C->S set chunk size
-<<<<<<< HEAD
 			err = mrw.Write(&message.MsgSetChunkSize{
 				Value: 65536,
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID: base.ControlChunkStreamID,
-				Type:          base.MessageTypeSetChunkSize,
-				Body:          []byte{0x00, 0x01, 0x00, 0x00},
->>>>>>> dahua
 			})
 			require.NoError(t, err)
 
-			mw.SetChunkSize(65536)
-
 			// C->S releaseStream
-<<<<<<< HEAD
 			err = mrw.Write(&message.MsgCommandAMF0{
 				ChunkStreamID: 3,
 				Payload: []interface{}{
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID: 3,
-				Type:          base.MessageTypeCommandAMF0,
-				Body: flvio.FillAMF0ValsMalloc([]interface{}{
->>>>>>> dahua
 					"releaseStream",
 					float64(2),
 					nil,
 					"",
-<<<<<<< HEAD
 				},
-=======
-				}),
->>>>>>> dahua
 			})
 			require.NoError(t, err)
 
 			// C->S FCPublish
-<<<<<<< HEAD
 			err = mrw.Write(&message.MsgCommandAMF0{
 				ChunkStreamID: 3,
 				Payload: []interface{}{
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID: 3,
-				Type:          base.MessageTypeCommandAMF0,
-				Body: flvio.FillAMF0ValsMalloc([]interface{}{
->>>>>>> dahua
 					"FCPublish",
 					float64(3),
 					nil,
 					"",
-<<<<<<< HEAD
 				},
-=======
-				}),
->>>>>>> dahua
 			})
 			require.NoError(t, err)
 
 			// C->S createStream
-<<<<<<< HEAD
 			err = mrw.Write(&message.MsgCommandAMF0{
 				ChunkStreamID: 3,
 				Payload: []interface{}{
@@ -360,29 +249,11 @@ func TestReadTracks(t *testing.T) {
 					float64(4),
 					nil,
 				},
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID: 3,
-				Type:          base.MessageTypeCommandAMF0,
-				Body: flvio.FillAMF0ValsMalloc([]interface{}{
-					"createStream",
-					float64(4),
-					nil,
-				}),
->>>>>>> dahua
 			})
 			require.NoError(t, err)
 
 			// S->C result
-<<<<<<< HEAD
 			msg, err = mrw.Read()
-=======
-			msg, err = mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, uint8(3), msg.ChunkStreamID)
-			require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-			arr, err = flvio.ParseAMFVals(msg.Body, false)
->>>>>>> dahua
 			require.NoError(t, err)
 			require.Equal(t, &message.MsgCommandAMF0{
 				ChunkStreamID: 3,
@@ -395,33 +266,20 @@ func TestReadTracks(t *testing.T) {
 			}, msg)
 
 			// C->S publish
-<<<<<<< HEAD
 			err = mrw.Write(&message.MsgCommandAMF0{
 				ChunkStreamID:   8,
 				MessageStreamID: 1,
 				Payload: []interface{}{
-=======
-			err = mw.Write(&base.Message{
-				ChunkStreamID:   8,
-				Type:            base.MessageTypeCommandAMF0,
-				MessageStreamID: 1,
-				Body: flvio.FillAMF0ValsMalloc([]interface{}{
->>>>>>> dahua
 					"publish",
 					float64(5),
 					nil,
 					"",
 					"live",
-<<<<<<< HEAD
 				},
-=======
-				}),
->>>>>>> dahua
 			})
 			require.NoError(t, err)
 
 			// S->C onStatus
-<<<<<<< HEAD
 			msg, err = mrw.Read()
 			require.NoError(t, err)
 			require.Equal(t, &message.MsgCommandAMF0{
@@ -436,22 +294,6 @@ func TestReadTracks(t *testing.T) {
 						{K: "code", V: "NetStream.Publish.Start"},
 						{K: "description", V: "publish start"},
 					},
-=======
-			msg, err = mr.Read()
-			require.NoError(t, err)
-			require.Equal(t, uint8(5), msg.ChunkStreamID)
-			require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-			arr, err = flvio.ParseAMFVals(msg.Body, false)
-			require.NoError(t, err)
-			require.Equal(t, []interface{}{
-				"onStatus",
-				float64(5),
-				nil,
-				flvio.AMFMap{
-					{K: "level", V: "status"},
-					{K: "code", V: "NetStream.Publish.Start"},
-					{K: "description", V: "publish start"},
->>>>>>> dahua
 				},
 			}, msg)
 
@@ -484,15 +326,6 @@ func TestReadTracks(t *testing.T) {
 						},
 					},
 				})
-<<<<<<< HEAD
-=======
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   4,
-					Type:            base.MessageTypeDataAMF0,
-					MessageStreamID: 1,
-					Body:            byts,
-				})
->>>>>>> dahua
 				require.NoError(t, err)
 
 				// C->S H264 decoder config
@@ -507,21 +340,12 @@ func TestReadTracks(t *testing.T) {
 				b := make([]byte, 128)
 				var n int
 				codec.ToConfig(b, &n)
-<<<<<<< HEAD
 				err = mrw.Write(&message.MsgVideo{
 					ChunkStreamID:   6,
 					MessageStreamID: 1,
 					IsKeyFrame:      true,
 					H264Type:        flvio.AVC_SEQHDR,
 					Payload:         b[:n],
-=======
-				body := append([]byte{flvio.FRAME_KEY<<4 | flvio.VIDEO_H264, 0, 0, 0, 0}, b[:n]...)
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   6,
-					Type:            base.MessageTypeVideo,
-					MessageStreamID: 1,
-					Body:            body,
->>>>>>> dahua
 				})
 				require.NoError(t, err)
 
@@ -532,7 +356,6 @@ func TestReadTracks(t *testing.T) {
 					ChannelCount: 2,
 				}.Encode()
 				require.NoError(t, err)
-<<<<<<< HEAD
 				err = mrw.Write(&message.MsgAudio{
 					ChunkStreamID:   4,
 					MessageStreamID: 1,
@@ -541,16 +364,6 @@ func TestReadTracks(t *testing.T) {
 					Channels:        flvio.SOUND_STEREO,
 					AACType:         flvio.AAC_SEQHDR,
 					Payload:         enc,
-=======
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   4,
-					Type:            base.MessageTypeAudio,
-					MessageStreamID: 1,
-					Body: append([]byte{
-						flvio.SOUND_AAC<<4 | flvio.SOUND_44Khz<<2 | flvio.SOUND_16BIT<<1 | flvio.SOUND_STEREO,
-						flvio.AAC_SEQHDR,
-					}, enc...),
->>>>>>> dahua
 				})
 				require.NoError(t, err)
 
@@ -578,15 +391,6 @@ func TestReadTracks(t *testing.T) {
 						},
 					},
 				})
-<<<<<<< HEAD
-=======
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   4,
-					Type:            base.MessageTypeDataAMF0,
-					MessageStreamID: 1,
-					Body:            byts,
-				})
->>>>>>> dahua
 				require.NoError(t, err)
 
 				// C->S H264 decoder config
@@ -601,21 +405,12 @@ func TestReadTracks(t *testing.T) {
 				b := make([]byte, 128)
 				var n int
 				codec.ToConfig(b, &n)
-<<<<<<< HEAD
 				err = mrw.Write(&message.MsgVideo{
 					ChunkStreamID:   6,
 					MessageStreamID: 1,
 					IsKeyFrame:      true,
 					H264Type:        flvio.AVC_SEQHDR,
 					Payload:         b[:n],
-=======
-				body := append([]byte{flvio.FRAME_KEY<<4 | flvio.VIDEO_H264, 0, 0, 0, 0}, b[:n]...)
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   6,
-					Type:            base.MessageTypeVideo,
-					MessageStreamID: 1,
-					Body:            body,
->>>>>>> dahua
 				})
 				require.NoError(t, err)
 
@@ -650,7 +445,6 @@ func TestReadTracks(t *testing.T) {
 				b := make([]byte, 128)
 				var n int
 				codec.ToConfig(b, &n)
-<<<<<<< HEAD
 				err = mrw.Write(&message.MsgVideo{
 					ChunkStreamID:   6,
 					MessageStreamID: 1,
@@ -675,14 +469,6 @@ func TestReadTracks(t *testing.T) {
 					Channels:        flvio.SOUND_STEREO,
 					AACType:         flvio.AAC_SEQHDR,
 					Payload:         enc,
-=======
-				body := append([]byte{flvio.FRAME_KEY<<4 | flvio.VIDEO_H264, 0, 0, 0, 0}, b[:n]...)
-				err = mw.Write(&base.Message{
-					ChunkStreamID:   6,
-					Type:            base.MessageTypeVideo,
-					MessageStreamID: 1,
-					Body:            body,
->>>>>>> dahua
 				})
 				require.NoError(t, err)
 			}
@@ -743,7 +529,6 @@ func TestWriteTracks(t *testing.T) {
 	err = handshake.C0S0{}.Read(bc)
 	require.NoError(t, err)
 
-<<<<<<< HEAD
 	// S->C handshake S1
 	s1 := handshake.C1S1{}
 	err = s1.Read(bc, false)
@@ -758,31 +543,6 @@ func TestWriteTracks(t *testing.T) {
 	require.NoError(t, err)
 
 	mrw := message.NewReadWriter(bc)
-=======
-	// C->S handshake C0
-	err = base.HandshakeC0{}.Write(conn)
-	require.NoError(t, err)
-
-	// C-> handshake C1
-	err = base.HandshakeC1{}.Write(conn)
-	require.NoError(t, err)
-
-	// S->C handshake S0
-	err = base.HandshakeS0{}.Read(conn)
-	require.NoError(t, err)
-
-	// S->C handshake S1+S2
-	s1s2 := make([]byte, 1536*2)
-	_, err = conn.Read(s1s2)
-	require.NoError(t, err)
-
-	// C->S handshake C2
-	err = base.HandshakeC2{}.Write(conn, s1s2)
-	require.NoError(t, err)
-
-	mw := base.NewMessageWriter(conn)
-	mr := base.NewMessageReader(bufio.NewReader(conn))
->>>>>>> dahua
 
 	// C->S connect
 	err = mrw.Write(&message.MsgCommandAMF0{
@@ -802,7 +562,6 @@ func TestWriteTracks(t *testing.T) {
 			},
 		},
 	})
-<<<<<<< HEAD
 	require.NoError(t, err)
 
 	// S->C window acknowledgement size
@@ -845,96 +604,22 @@ func TestWriteTracks(t *testing.T) {
 				{K: "description", V: "Connection succeeded."},
 				{K: "objectEncoding", V: float64(0)},
 			},
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: 3,
-		Type:          base.MessageTypeCommandAMF0,
-		Body:          byts,
-	})
-	require.NoError(t, err)
-
-	// S->C window acknowledgement size
-	msg, err := mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, &base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeSetWindowAckSize,
-		Body:          []byte{0x00, 38, 37, 160},
-	}, msg)
-
-	// S->C set peer bandwidth
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, &base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeSetPeerBandwidth,
-		Body:          []byte{0x00, 0x26, 0x25, 0xa0, 0x02},
-	}, msg)
-
-	// S->C set chunk size
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, &base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeSetChunkSize,
-		Body:          []byte{0x00, 0x01, 0x00, 0x00},
-	}, msg)
-
-	mr.SetChunkSize(65536)
-
-	// S->C result
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(3), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err := flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"_result",
-		float64(1),
-		flvio.AMFMap{
-			{K: "fmsVer", V: "LNX 9,0,124,2"},
-			{K: "capabilities", V: float64(31)},
-		},
-		flvio.AMFMap{
-			{K: "level", V: "status"},
-			{K: "code", V: "NetConnection.Connect.Success"},
-			{K: "description", V: "Connection succeeded."},
-			{K: "objectEncoding", V: float64(0)},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// C->S window acknowledgement size
-<<<<<<< HEAD
 	err = mrw.Write(&message.MsgSetWindowAckSize{
 		Value: 2500000,
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeSetWindowAckSize,
-		Body:          []byte{0x00, 0x26, 0x25, 0xa0},
->>>>>>> dahua
 	})
 	require.NoError(t, err)
 
 	// C->S set chunk size
-<<<<<<< HEAD
 	err = mrw.Write(&message.MsgSetChunkSize{
 		Value: 65536,
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeSetChunkSize,
-		Body:          []byte{0x00, 0x01, 0x00, 0x00},
->>>>>>> dahua
 	})
 	require.NoError(t, err)
 
-	mw.SetChunkSize(65536)
-
 	// C->S createStream
-<<<<<<< HEAD
 	err = mrw.Write(&message.MsgCommandAMF0{
 		ChunkStreamID: 3,
 		Payload: []interface{}{
@@ -942,29 +627,11 @@ func TestWriteTracks(t *testing.T) {
 			float64(2),
 			nil,
 		},
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: 3,
-		Type:          base.MessageTypeCommandAMF0,
-		Body: flvio.FillAMF0ValsMalloc([]interface{}{
-			"createStream",
-			float64(2),
-			nil,
-		}),
->>>>>>> dahua
 	})
 	require.NoError(t, err)
 
 	// S->C result
-<<<<<<< HEAD
 	msg, err = mrw.Read()
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(3), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
->>>>>>> dahua
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgCommandAMF0{
 		ChunkStreamID: 3,
@@ -986,13 +653,6 @@ func TestWriteTracks(t *testing.T) {
 			"",
 		},
 	})
-<<<<<<< HEAD
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: 8,
-		Body:          byts,
-	})
->>>>>>> dahua
 	require.NoError(t, err)
 
 	// C->S play
@@ -1006,7 +666,6 @@ func TestWriteTracks(t *testing.T) {
 			float64(-2000),
 		},
 	})
-<<<<<<< HEAD
 	require.NoError(t, err)
 
 	// S->C event "stream is recorded"
@@ -1038,53 +697,10 @@ func TestWriteTracks(t *testing.T) {
 				{K: "code", V: "NetStream.Play.Reset"},
 				{K: "description", V: "play reset"},
 			},
-=======
-	err = mw.Write(&base.Message{
-		ChunkStreamID: 8,
-		Type:          base.MessageTypeCommandAMF0,
-		Body:          byts,
-	})
-	require.NoError(t, err)
-
-	// S->C event "stream is recorded"
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, &base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeUserControl,
-		Body:          []byte{0x00, 0x04, 0x00, 0x00, 0x00, 0x01},
-	}, msg)
-
-	// S->C event "stream begin 1"
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, &base.Message{
-		ChunkStreamID: base.ControlChunkStreamID,
-		Type:          base.MessageTypeUserControl,
-		Body:          []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
-	}, msg)
-
-	// S->C onStatus
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(5), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"onStatus",
-		float64(4),
-		nil,
-		flvio.AMFMap{
-			{K: "level", V: "status"},
-			{K: "code", V: "NetStream.Play.Reset"},
-			{K: "description", V: "play reset"},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// S->C onStatus
-<<<<<<< HEAD
 	msg, err = mrw.Read()
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgCommandAMF0{
@@ -1099,27 +715,10 @@ func TestWriteTracks(t *testing.T) {
 				{K: "code", V: "NetStream.Play.Start"},
 				{K: "description", V: "play start"},
 			},
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(5), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"onStatus",
-		float64(4),
-		nil,
-		flvio.AMFMap{
-			{K: "level", V: "status"},
-			{K: "code", V: "NetStream.Play.Start"},
-			{K: "description", V: "play start"},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// S->C onStatus
-<<<<<<< HEAD
 	msg, err = mrw.Read()
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgCommandAMF0{
@@ -1134,27 +733,10 @@ func TestWriteTracks(t *testing.T) {
 				{K: "code", V: "NetStream.Data.Start"},
 				{K: "description", V: "data start"},
 			},
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(5), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"onStatus",
-		float64(4),
-		nil,
-		flvio.AMFMap{
-			{K: "level", V: "status"},
-			{K: "code", V: "NetStream.Data.Start"},
-			{K: "description", V: "data start"},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// S->C onStatus
-<<<<<<< HEAD
 	msg, err = mrw.Read()
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgCommandAMF0{
@@ -1169,27 +751,10 @@ func TestWriteTracks(t *testing.T) {
 				{K: "code", V: "NetStream.Play.PublishNotify"},
 				{K: "description", V: "publish notify"},
 			},
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(5), msg.ChunkStreamID)
-	require.Equal(t, base.MessageTypeCommandAMF0, msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"onStatus",
-		float64(4),
-		nil,
-		flvio.AMFMap{
-			{K: "level", V: "status"},
-			{K: "code", V: "NetStream.Play.PublishNotify"},
-			{K: "description", V: "publish notify"},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// S->C onMetadata
-<<<<<<< HEAD
 	msg, err = mrw.Read()
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgDataAMF0{
@@ -1203,26 +768,10 @@ func TestWriteTracks(t *testing.T) {
 				{K: "audiodatarate", V: float64(0)},
 				{K: "audiocodecid", V: float64(10)},
 			},
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(4), msg.ChunkStreamID)
-	require.Equal(t, base.MessageType(0x12), msg.Type)
-	arr, err = flvio.ParseAMFVals(msg.Body, false)
-	require.NoError(t, err)
-	require.Equal(t, []interface{}{
-		"onMetaData",
-		flvio.AMFMap{
-			{K: "videodatarate", V: float64(0)},
-			{K: "videocodecid", V: float64(7)},
-			{K: "audiodatarate", V: float64(0)},
-			{K: "audiocodecid", V: float64(10)},
->>>>>>> dahua
 		},
 	}, msg)
 
 	// S->C H264 decoder config
-<<<<<<< HEAD
 	msg, err = mrw.Read()
 	require.NoError(t, err)
 	require.Equal(t, &message.MsgVideo{
@@ -1252,25 +801,4 @@ func TestWriteTracks(t *testing.T) {
 		AACType:         flvio.AAC_SEQHDR,
 		Payload:         []byte{0x12, 0x10},
 	}, msg)
-=======
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(6), msg.ChunkStreamID)
-	require.Equal(t, base.MessageType(0x09), msg.Type)
-	require.Equal(t, []byte{
-		0x17, 0x0, 0x0, 0x0, 0x0, 0x1, 0x64, 0x0,
-		0xc, 0xff, 0xe1, 0x0, 0x15, 0x67, 0x64, 0x0,
-		0xc, 0xac, 0x3b, 0x50, 0xb0, 0x4b, 0x42, 0x0,
-		0x0, 0x3, 0x0, 0x2, 0x0, 0x0, 0x3, 0x0,
-		0x3d, 0x8, 0x1, 0x0, 0x4, 0x68, 0xee, 0x3c,
-		0x80,
-	}, msg.Body)
-
-	// S->C AAC decoder config
-	msg, err = mr.Read()
-	require.NoError(t, err)
-	require.Equal(t, uint8(4), msg.ChunkStreamID)
-	require.Equal(t, base.MessageType(0x08), msg.Type)
-	require.Equal(t, []byte{0xae, 0x0, 0x12, 0x10}, msg.Body)
->>>>>>> dahua
 }
