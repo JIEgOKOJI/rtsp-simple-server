@@ -218,9 +218,7 @@ outer:
 				}
 				s.log(logger.Debug, "iSpremium ", strings.Split(srtName[0], "/")[1], "serving manifest ", req.dir, "rewrite ", requestDir)
 			}
-			r := s.findOrCreateMuxer(requestDir, req.ctx.Request.RemoteAddr, req)
-
-			r.onRequest(req)
+			s.findOrCreateMuxer(requestDir, req.ctx.Request.RemoteAddr, req)
 
 		case c := <-s.muxerClose:
 			if c2, ok := s.muxers[c.PathName()]; !ok || c2 != c {
