@@ -3,9 +3,9 @@
 # General parameters
 
 # Sets the verbosity of the program; available values are "error", "warn", "info", "debug".
-logLevel: error
+logLevel: debug
 # Destinations of log messages; available values are "stdout", "file" and "syslog".
-logDestinations: [file]
+logDestinations: [stdout]
 # If "file" is in logDestinations, this is the file which will receive the logs.
 logFile: rtsp-simple-server.log
 
@@ -120,7 +120,7 @@ hlsVariant: lowLatency
 # Number of HLS segments to generate.
 # Increasing segments allows more buffering,
 # Decreasing segments decreases latency.
-hlsSegmentCount: 4
+hlsSegmentCount: 7
 # Minimum duration of each segment.
 # A player usually puts 3 segments in a buffer before reproducing the stream.
 # The final segment duration is also influenced by the interval between IDR frames,
@@ -133,7 +133,6 @@ hlsSegmentDuration: 1s
 # Part duration is influenced by the distance between video/audio samples
 # and is adjusted in order to produce segments with a similar duration.
 hlsPartDuration: 200ms
-=======
 hlsSegmentDuration: 2s
 # Minimum duration of each part.
 # Parts are used in Low-Latency HLS in place of segments.

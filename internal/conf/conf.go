@@ -384,13 +384,6 @@ func (conf *Conf) CheckAndFillMissing() error {
 
 	switch conf.HLSVariant {
 	case HLSVariantLowLatency:
-		if conf.HLSSegmentCount < 7 {
-			return fmt.Errorf("Low-Latency HLS requires at least 7 segments")
-		}
-
-		if !conf.HLSEncryption {
-			return fmt.Errorf("Low-Latency HLS requires encryption")
-		}
 
 	default:
 		if conf.HLSSegmentCount < 3 {

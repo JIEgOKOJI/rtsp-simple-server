@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	gopath "path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -187,28 +189,36 @@ func (s *hlsServer) run() {
 
 	router := gin.New()
 	router.NoRoute(s.onRequest)
-
-	hs := &http.Server{Handler: router}
-	go hs.Serve(s.ln)
+	hs := &http.Server{
+		Handler:   router,
+		TLSConfig: s.tlsConfig,
+		ErrorLog:  log.New(&nilWriter{}, "", 0),
+	}
+	if s.tlsConfig != nil {
+		go hs.ServeTLS(s.ln, "", "")
+	} else {
+		go hs.Serve(s.ln)
+	}
 
 outer:
 	for {
 		select {
 		case pa := <-s.pathSourceReady:
 			if s.hlsAlwaysRemux {
-				s.findOrCreateMuxer(pa.Name(), "")
+				s.findOrCreateMuxer(pa.Name(), "", nil)
 			}
 
 		case req := <-s.request:
 			srtName := strings.Split(req.dir, "_")
+			requestDir := req.dir
 			if len(srtName) == 1 {
 				status, _ := s.getPrem(strings.Split(srtName[0], "/")[1])
 				if status == 1 {
-					req.dir = req.dir + "_prem"
+					requestDir = req.dir + "_prem"
 				}
-				fmt.Println("iSpremium ", strings.Split(srtName[0], "/")[1], "serving manifest ", req.dir)
+				s.log(logger.Debug, "iSpremium ", strings.Split(srtName[0], "/")[1], "serving manifest ", req.dir, "rewrite ", requestDir)
 			}
-			r := s.findOrCreateMuxer(req.dir, req.ctx.Request.RemoteAddr)
+			r := s.findOrCreateMuxer(requestDir, req.ctx.Request.RemoteAddr, req)
 
 			r.onRequest(req)
 
@@ -331,6 +341,7 @@ func (s *hlsServer) onRequest(ctx *gin.Context) {
 func (s *hlsServer) findOrCreateMuxer(pathName string, remoteAddr string, req *hlsMuxerRequest) *hlsMuxer {
 	r, ok := s.muxers[pathName]
 	if !ok {
+		s.log(logger.Debug, "not found")
 		r = newHLSMuxer(
 			s.ctx,
 			pathName,

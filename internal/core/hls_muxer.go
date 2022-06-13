@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -285,10 +286,12 @@ func (m *hlsMuxer) runInner(innerCtx context.Context, innerReady chan struct{}) 
 	streamName := "NoName"
 	if len(strings.Split(m.pathName, "/")) == 2 {
 		streamName = strings.Split(m.pathName, "/")[1]
+		m.log(logger.Debug, "StreamName Muxer (%v)", streamName)
 		streamName = strings.Split(streamName, "_")[0]
+		m.log(logger.Debug, "StreamName Muxer (%v)", streamName)
 	}
 
-	fmt.Println("streamName", streamName)
+	m.log(logger.Debug, "StreamName Muxer name done (%v)", streamName)
 	defer func() {
 		m.path.onReaderRemove(pathReaderRemoveReq{author: m})
 	}()

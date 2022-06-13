@@ -29,6 +29,7 @@ func NewMuxer(
 	segmentMaxSize uint64,
 	videoTrack *gortsplib.TrackH264,
 	audioTrack *gortsplib.TrackAAC,
+	streamName string,
 ) (*Muxer, error) {
 	m := &Muxer{}
 
@@ -65,7 +66,7 @@ func NewMuxer(
 		)
 	}
 
-	m.primaryPlaylist = newMuxerPrimaryPlaylist(variant != MuxerVariantMPEGTS, videoTrack, audioTrack)
+	m.primaryPlaylist = newMuxerPrimaryPlaylist(variant != MuxerVariantMPEGTS, videoTrack, audioTrack, streamName)
 
 	return m, nil
 }
